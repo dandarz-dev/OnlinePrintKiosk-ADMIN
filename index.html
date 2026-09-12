@@ -160,7 +160,8 @@
         .btn-done { background: #9acd32; color: #0b0f17; font-weight: 600; } .btn-done:hover { background: #8ae228; }
         .btn-view { background: #3b82f6; } .btn-view:hover { background: #2563eb; }
         .btn-delete { background: #dc2626; } .btn-delete:hover { background: #b91c1c; }
-        .btn-pay { background: #fbbf24; color: #0b0f17; font-weight: 600; } .btn-pay:hover { background: #f59e0b; }
+        .btn-pay { background: #0084FF; color: white; font-weight: 600; } .btn-pay:hover { background: #006edd; }
+        .btn-msgr { background: #0084FF; } .btn-msgr:hover { background: #006edd; }
         
         .mass-delete-btn { background: #dc2626; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; }
         .mass-delete-btn:hover { background: #b91c1c; }
@@ -679,9 +680,11 @@
             
             let actionButtons = "";
             if (!isPaid) {
-                actionButtons = `<button class="action-btn btn-pay" onclick="receivePaymentAndOpenFile('${orderId}', '${data.fileUrl || ''}')">Receive Payment & View File</button>`;
+                actionButtons = `<button class="action-btn btn-pay" onclick="receivePaymentAndOpenMessenger('${orderId}', '${data.messengerUrl || ''}')">Receive Payment & Message</button>`;
             } else {
+                actionButtons += data.messengerUrl ? `<a href="${data.messengerUrl}" target="_blank" class="action-btn btn-msgr">Open Messenger</a>` : "";
                 actionButtons += data.fileUrl ? `<a href="${data.fileUrl}" target="_blank" class="action-btn btn-view">View File</a>` : "";
+                
                 if (data.status !== "Completed") {
                     actionButtons += `<button class="action-btn btn-done" onclick="markAsComplete('${orderId}')">Mark as Done</button>`;
                 } else {
@@ -711,12 +714,21 @@
         initChart(hourlyCounts);
     });
 
-    window.receivePaymentAndOpenFile = async function(id, fileUrl) {
-        if(confirm("Have you received the payment from the customer?")) {
+    window.receivePaymentAndOpenMessenger = async function(id, messengerUrl) {
+        if(confirm("Nasubhan na ba nimo ang bayad gikan sa customer?")) {
             await updateDoc(doc(db, "print_jobs", id), { paymentStatus: "Paid" });
             
-            if (fileUrl && fileUrl.trim() !== "") {
-                window.open(fileUrl, '_blank');
+            if (messengerUrl && messengerUrl.trim() !== "" && messengerUrl !== "undefined") {
+                window.open(messengerUrl, '_blank');
+            } else {
+                // Kung wala silay gibutang nga Messenger link, i-abli ang general m.me o mangayo og link
+                let fbLink = prompt("Walay nahimutang nga Messenger link sa database. I-input ang m.me/ username o Facebook link sa customer (o ibilin nga blangko):");
+                if (fbLink && fbLink.trim() !== "") {
+                    let finalLink = fbLink.startsWith('http') ? fbLink : `https://m.me/${fbLink}`;
+                    window.open(finalLink, '_blank');
+                } else {
+                    alert("Narehistro na nga Paid!");
+                }
             }
         }
     }
