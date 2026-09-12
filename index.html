@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EM-PRINTS Admin Dashboard</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CHART.JS FOR ACTIVE GRAPH -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        
+        body { 
+            background-color: #0b0f17; 
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(154, 205, 50, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(30, 41, 59, 0.4) 0%, transparent 40%);
+            color: #f1f5f9; 
+            padding: 20px; 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            position: relative;
+            padding-bottom: 70px;
+        }
+
+        /* Crypto Ticker Bar Style (Top) */
+        .crypto-ticker {
+            background: #0f172a;
+            color: #94a3b8;
+            padding: 8px 15px;
+            font-size: 11px;
+            font-weight: 500;
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            white-space: nowrap;
+            border-bottom: 1px solid #1e293b;
+            margin: -20px -20px 20px -20px;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+        }
+        .crypto-ticker::-webkit-scrollbar { height: 3px; }
+        .crypto-ticker::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .crypto-item { display: inline-flex; align-items: center; gap: 6px; }
+        .crypto-green { color: #4ade80; font-weight: 600; }
+        .crypto-red { color: #f87171; font-weight: 600; }
+
+        .container { max-width: 1100px; width: 100%; margin: 0 auto; }
+        
+        header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: #131b2e; 
+            padding: 24px 30px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
+            border: 1px solid #1e293b;
+            margin-bottom: 20px; 
+            flex-wrap: wrap; 
+            gap: 15px; 
+        }
+
+        .header-left-group {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* EXACT 80px by 80px LOGO SIZE */
+        .header-logo {
+            width: 80px;
+            height: 80px;
+            min-width: 80px;
+            min-height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #9acd32;
+            box-shadow: 0 0 15px rgba(154, 205, 50, 0.5);
+        }
+
+        .header-title-wrapper h2 { color: #ffffff; font-size: 24px; font-weight: 700; letter-spacing: 0.5px; }
+        .admin-signature { font-size: 13px; color: #94a3b8; font-weight: 500; margin-top: 4px; }
+        
+        .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        
+        .stock-badge, .user-badge { padding: 8px 14px; border-radius: 12px; font-weight: 600; font-size: 13px; }
+        .stock-badge { background: rgba(154, 205, 50, 0.1); color: #9acd32; border: 1px solid rgba(154, 205, 50, 0.3); }
+        .user-badge { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
+        
+        .logout-btn { background: #dc2626; color: white; border: none; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 600; transition: background 0.2s; }
+        .logout-btn:hover { background: #b91c1c; }
+
+        .revenue-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        
+        .revenue-card { 
+            background: #131b2e; 
+            padding: 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
+            border: 1px solid #1e293b;
+            border-left: 5px solid #9acd32; 
+        }
+        .revenue-card.monthly { border-left-color: #38bdf8; }
+        .revenue-card.yearly { border-left-color: #fbbf24; }
+        
+        .revenue-card p { color: #94a3b8; font-size: 13px; font-weight: 500; }
+        .revenue-card h3 { color: #ffffff; font-size: 22px; margin-top: 5px; font-weight: 600; }
+
+        /* SALES CHART CARD */
+        .chart-card {
+            background: #131b2e;
+            padding: 20px 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid #1e293b;
+            margin-bottom: 25px;
+        }
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .chart-header h3 { color: #ffffff; font-size: 16px; font-weight: 600; }
+        .chart-container {
+            position: relative;
+            height: 220px;
+            width: 100%;
+        }
+
+        .orders-card { 
+            background: #131b2e; 
+            padding: 25px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
+            border: 1px solid #1e293b;
+        }
+        
+        .orders-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .orders-header h3 { color: #ffffff; font-size: 18px; font-weight: 600; }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid #1e293b; font-size: 14px; color: #cbd5e1; }
+        th { background: #0f172a; color: #94a3b8; font-weight: 600; }
+        tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+        .status-badge { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; }
+        .bg-pending { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+        .bg-done { background: rgba(154, 205, 50, 0.15); color: #9acd32; }
+        .bg-unpaid { background: rgba(220, 38, 38, 0.15); color: #f87171; }
+        .bg-paid { background: rgba(154, 205, 50, 0.15); color: #9acd32; }
+
+        button.action-btn, a.action-btn { color: white; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 500; text-decoration: none; display: inline-block; transition: background 0.2s; margin-right: 4px; margin-bottom: 4px; }
+        .btn-done { background: #9acd32; color: #0b0f17; font-weight: 600; } .btn-done:hover { background: #8ae228; }
+        .btn-view { background: #3b82f6; } .btn-view:hover { background: #2563eb; }
+        .btn-delete { background: #dc2626; } .btn-delete:hover { background: #b91c1c; }
+        .btn-pay { background: #fbbf24; color: #0b0f17; font-weight: 600; } .btn-pay:hover { background: #f59e0b; }
+        
+        .mass-delete-btn { background: #dc2626; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; }
+        .mass-delete-btn:hover { background: #b91c1c; }
+
+        .no-orders { text-align: center; color: #64748b; padding: 40px; font-style: italic; }
+        .footer-credit { margin-top: 20px; color: #64748b; font-size: 12px; text-align: center; }
+
+        /* FLOATING BUTTONS STYLING (RIGHT SIDE) */
+        .floating-calc-btn {
+            position: fixed;
+            bottom: 75px;
+            right: 20px;
+            background: #9acd32;
+            color: #0b0f17;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(154, 205, 50, 0.4);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .floating-calc-btn:hover {
+            background: #8ae228;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(154, 205, 50, 0.6);
+        }
+
+        .floating-settings-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        .floating-settings-btn:hover { background: #2563eb; transform: translateY(-2px); }
+
+        .calc-modal {
+            display: none;
+            position: fixed;
+            bottom: 135px;
+            right: 20px;
+            background: #131b2e;
+            border: 1px solid #1e293b;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            z-index: 1001;
+            width: 280px;
+        }
+        .calc-display {
+            width: 100%;
+            background: #0f172a;
+            color: #9acd32;
+            border: 1px solid #334155;
+            padding: 12px;
+            font-size: 20px;
+            text-align: right;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        .calc-keys {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        .calc-keys button {
+            padding: 12px;
+            background: #1e293b;
+            color: #f1f5f9;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .calc-keys button:hover { background: #334155; }
+        .calc-keys button.operator { background: #2563eb; color: white; border-color: #1d4ed8; }
+        .calc-keys button.operator:hover { background: #1d4ed8; }
+        .calc-keys button.equals { background: #9acd32; color: #0b0f17; grid-column: span 2; }
+        .calc-keys button.equals:hover { background: #8ae228; }
+
+        .settings-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #131b2e;
+            border: 1px solid #1e293b;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            z-index: 2000;
+            width: 320px;
+        }
+        .settings-modal h3 { color: #fff; font-size: 18px; margin-bottom: 15px; font-weight: 600; }
+        .settings-modal label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 5px; }
+        .settings-modal select, .settings-modal input {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #f1f5f9;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .settings-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .settings-actions button { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
+        .btn-save { background: #9acd32; color: #0b0f17; }
+        .btn-save:hover { background: #8ae228; }
+        .btn-close { background: #334155; color: #fff; }
+        .btn-close:hover { background: #475569; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <!-- LIVE CRYPTO TICKER VIEW (TOP BAR) -->
+        <div class="crypto-ticker" id="cryptoTicker">
+            <span class="crypto-item">BTC/USDT <span class="crypto-green">--</span></span>
+            <span class="crypto-item">ETH/USDT <span class="crypto-green">--</span></span>
+            <span class="crypto-item">SOL/USDT <span class="crypto-green">--</span></span>
+            <span class="crypto-item">XRP/USDT <span class="crypto-red">--</span></span>
+            <span class="crypto-item">BNB/USDT <span class="crypto-green">--</span></span>
+        </div>
+
+        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div class="header-left-group">
+                <!-- 80x80 LOGO (mylogo.png) -->
+                <img src="mylogo.png" alt="Dandarz Logo" class="header-logo">
+                <div class="header-title-wrapper">
+                    <h2>Print Shop Admin Dashboard</h2>
+                    <div class="admin-signature">Managed by: <strong>Danilo Darantinao</strong></div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-badge" id="userRoleBadge">Role: Loading...</div>
+                <div class="stock-badge">Remaining Paper: <span id="remainingPages">Loading...</span> pages</div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="revenue-grid">
+        <div class="revenue-card"><p>Today's Revenue (Daily)</p><h3 id="dailyRev">₱0.00</h3></div>
+        <div class="revenue-card monthly"><p>This Month's Revenue</p><h3 id="monthlyRev">₱0.00</h3></div>
+        <div class="revenue-card yearly"><p>This Year's Revenue</p><h3 id="yearlyRev">₱0.00</h3></div>
+    </div>
+
+    <!-- OPERATIONS PER HOUR LINE CHART -->
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3>Operations Trend (Orders per Hour)</h3>
+        </div>
+        <div class="chart-container">
+            <canvas id="salesChart"></canvas>
+        </div>
+    </div>
+
+    <div class="orders-card">
+        <div class="orders-header">
+            <h3>Incoming Print Orders</h3>
+            <div id="massDeleteContainer"></div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>File Name & Printer</th>
+                    <th>Pages & Copies</th>
+                    <th>Amount Due</th>
+                    <th>Status & Payment</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="ordersTableBody">
+                <tr><td colspan="5" class="no-orders">Waiting for orders...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- FLOATING BUTTONS (RIGHT SIDE) -->
+<button class="floating-calc-btn" onclick="toggleCalculator()">Calculator</button>
+<button class="floating-settings-btn" id="floatingSettingsBtn" onclick="toggleSettingsModal()">Change Credentials</button>
+
+<!-- SETTINGS MODAL -->
+<div class="settings-modal" id="settingsModal">
+    <h3>Update Credentials</h3>
+    <label>Select Account to Modify</label>
+    <select id="targetAccount" onchange="loadAccountDetails()">
+        <option value="admin">Admin</option>
+        <option value="bantay">Staff (Bantay)</option>
+    </select>
+    
+    <label>New Username</label>
+    <input type="text" id="newUsernameInput">
+    
+    <label>New Password</label>
+    <input type="text" id="newPasswordInput">
+
+    <div class="settings-actions">
+        <button class="btn-close" onclick="toggleSettingsModal()">Cancel</button>
+        <button class="btn-save" onclick="saveCredentials()">Save Changes</button>
+    </div>
+</div>
+
+<!-- CALCULATOR MODAL -->
+<div class="calc-modal" id="calcModal">
+    <input type="text" class="calc-display" id="calcDisplay" readonly value="0">
+    <div class="calc-keys">
+        <button onclick="clearCalc()">C</button>
+        <button onclick="appendCalc('/')" class="operator">&divide;</button>
+        <button onclick="appendCalc('*')" class="operator">&times;</button>
+        <button onclick="appendCalc('-')" class="operator">-</button>
+        <button onclick="appendCalc('7')">7</button>
+        <button onclick="appendCalc('8')">8</button>
+        <button onclick="appendCalc('9')">9</button>
+        <button onclick="appendCalc('+')" class="operator">+</button>
+        <button onclick="appendCalc('4')">4</button>
+        <button onclick="appendCalc('5')">5</button>
+        <button onclick="appendCalc('6')">6</button>
+        <button onclick="appendCalc('1')">1</button>
+        <button onclick="appendCalc('2')">2</button>
+        <button onclick="appendCalc('3')">3</button>
+        <button onclick="appendCalc('0')">0</button>
+        <button onclick="appendCalc('.')">.</button>
+        <button onclick="calculateResult()" class="equals">=</button>
+    </div>
+</div>
+
+<div class="footer-credit">App developed by: dandarz &copy; 2026</div>
+
+<!-- FIREBASE MODULAR SDKS & APP LOGIC -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-analytics.js";
+    import { getFirestore, doc, collection, onSnapshot, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+    let ACCOUNTS = JSON.parse(localStorage.getItem("printShopAccounts")) || {
+        "admin": { pass: "admin666", role: "Admin" },
+        "bantay": { pass: "bantay123", role: "Staff (Bantay)" }
+    };
+
+    let currentUserRole = "";
+    let currentActiveUsername = "";
+
+    window.toggleSettingsModal = function() {
+        const modal = document.getElementById('settingsModal');
+        const isOpen = modal.style.display === 'block';
+        modal.style.display = isOpen ? 'none' : 'block';
+        if (!isOpen) {
+            loadAccountDetails();
+        }
+    }
+
+    window.loadAccountDetails = function() {
+        const target = document.getElementById('targetAccount').value;
+        document.getElementById('newUsernameInput').value = target;
+        document.getElementById('newPasswordInput').value = ACCOUNTS[target].pass;
+    }
+
+    window.saveCredentials = function() {
+        let adminPassCheck = prompt("Enter current Admin Password to confirm changes:");
+        if (adminPassCheck !== ACCOUNTS["admin"].pass) {
+            alert("Incorrect Admin Password! Changes cancelled.");
+            return;
+        }
+
+        const target = document.getElementById('targetAccount').value;
+        const newU = document.getElementById('newUsernameInput').value.trim().toLowerCase();
+        const newP = document.getElementById('newPasswordInput').value.trim();
+
+        if (!newU || !newP) {
+            alert("Username and password cannot be empty!");
+            return;
+        }
+
+        if (newU !== target) {
+            if (ACCOUNTS[newU]) {
+                alert("This username already exists!");
+                return;
+            }
+            ACCOUNTS[newU] = { pass: newP, role: ACCOUNTS[target].role };
+            delete ACCOUNTS[target];
+        } else {
+            ACCOUNTS[target].pass = newP;
+        }
+
+        localStorage.setItem("printShopAccounts", JSON.stringify(ACCOUNTS));
+        alert("Credentials updated successfully! Please log in again with your updated credentials.");
+        
+        sessionStorage.removeItem("printShopUser");
+        location.reload();
+    }
+
+    let salesChart;
+    function initChart(hourlyData) {
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        const labels = ['6 PM', '8 PM', '10 PM', '12 AM', '2 AM', '4 AM', '6 AM', '8 AM', '10 AM', '12 PM', '2 PM', '4 PM'];
+        
+        if (salesChart) {
+            salesChart.data.datasets[0].data = hourlyData;
+            salesChart.update();
+            return;
+        }
+
+        salesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Operations (per hour)',
+                    data: hourlyData,
+                    borderColor: '#38bdf8',
+                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#38bdf8'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#1e293b' },
+                        ticks: { color: '#94a3b8', stepSize: 1 }
+                    },
+                    x: {
+                        grid: { color: 'rgba(30, 41, 59, 0.5)' },
+                        ticks: { color: '#cbd5e1', font: { weight: '500' } }
+                    }
+                }
+            }
+        });
+    }
+
+    window.toggleCalculator = function() {
+        const modal = document.getElementById('calcModal');
+        modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+    }
+
+    let calcInput = "";
+    window.appendCalc = function(val) {
+        const display = document.getElementById('calcDisplay');
+        if (calcInput === "0" && val !== '.') calcInput = "";
+        calcInput += val;
+        display.value = calcInput;
+    }
+
+    window.clearCalc = function() {
+        calcInput = "";
+        document.getElementById('calcDisplay').value = "0";
+    }
+
+    window.calculateResult = function() {
+        const display = document.getElementById('calcDisplay');
+        try {
+            calcInput = eval(calcInput).toString();
+            display.value = calcInput;
+        } catch (e) {
+            display.value = "Error";
+            calcInput = "";
+        }
+    }
+
+    async function fetchCryptoPrices() {
+        try {
+            const res = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols=["BTCUSDT","ETHUSDT","SOLUSDT","XRPUSDT","BNBUSDT"]');
+            const data = await res.json();
+            
+            const tickerEl = document.getElementById('cryptoTicker');
+            tickerEl.innerHTML = data.map(coin => {
+                const symbol = coin.symbol.replace('USDT', '/USDT');
+                const price = parseFloat(coin.lastPrice).toLocaleString(undefined, {minimumFractionDigits: 2});
+                const change = parseFloat(coin.priceChangePercent);
+                const changeClass = change >= 0 ? 'crypto-green' : 'crypto-red';
+                const sign = change >= 0 ? '+' : '';
+                return `<span class="crypto-item">${symbol} <strong>$${price}</strong> <span class="${changeClass}">(${sign}${change.toFixed(2)}%)</span></span>`;
+            }).join(' &nbsp;|&nbsp; ');
+        } catch (e) {
+            console.error("Failed to fetch crypto prices", e);
+        }
+    }
+    fetchCryptoPrices();
+    setInterval(fetchCryptoPrices, 15000);
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCTfn6Deljs5y2KfyLKoL5Y-yQl-geGvE8",
+        authDomain: "emprintservices-13035.firebaseapp.com",
+        projectId: "emprintservices-13035",
+        storageBucket: "emprintservices-13035.firebasestorage.app",
+        messagingSenderId: "262351786921",
+        appId: "1:262351786921:web:097d79bb3aa00ae0182ab8",
+        measurementId: "G-4FLMGED2ZC"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+
+    function checkLogin() {
+        let savedUser = sessionStorage.getItem("printShopUser");
+        
+        if (!savedUser) {
+            let inputUser = prompt("Enter Username:");
+            if (!inputUser) { cancelAccess(); return; }
+            inputUser = inputUser.trim().toLowerCase();
+
+            if (!ACCOUNTS[inputUser]) { alert("Unknown username!"); checkLogin(); return; }
+
+            let inputPass = prompt(`Enter Password for '${inputUser}':`);
+            if (inputPass !== ACCOUNTS[inputUser].pass) { alert("Incorrect password!"); checkLogin(); return; }
+
+            sessionStorage.setItem("printShopUser", inputUser);
+            savedUser = inputUser;
+        }
+
+        currentActiveUsername = savedUser;
+        currentUserRole = ACCOUNTS[savedUser].role;
+        document.getElementById('userRoleBadge').innerText = `User: ${savedUser} (${currentUserRole})`;
+
+        if (currentUserRole === "Admin") {
+            document.getElementById('massDeleteContainer').innerHTML = `<button class="mass-delete-btn" onclick="deleteAllCompletedOrders()">Delete All Completed</button>`;
+            document.getElementById('floatingSettingsBtn').style.display = 'flex';
+        }
+    }
+
+    function cancelAccess() {
+        document.body.innerHTML = "<h2 style='text-align:center; margin-top:20vh; color:#f87171;'>Access Cancelled. Refresh to log in.</h2>";
+        throw new Error("Access Cancelled");
+    }
+
+    window.logout = function() {
+        sessionStorage.removeItem("printShopUser");
+        location.reload();
+    }
+
+    checkLogin();
+
+    let globalSnapshot = null;
+
+    onSnapshot(doc(db, "inventory", "paper_stock"), (docSnap) => {
+        if (docSnap.exists) {
+            document.getElementById('remainingPages').innerText = docSnap.data().remaining_pages;
+        } else {
+            document.getElementById('remainingPages').innerText = "Not Set";
+        }
+    });
+
+    onSnapshot(collection(db, "print_jobs"), (snapshot) => {
+        globalSnapshot = snapshot; 
+        const tbody = document.getElementById('ordersTableBody');
+        tbody.innerHTML = '';
+
+        if (snapshot.empty) {
+            tbody.innerHTML = `<tr><td colspan="5" class="no-orders">No new print orders yet.</td></tr>`;
+            initChart([0,0,0,0,0,0,0,0,0,0,0,0]);
+            return;
+        }
+
+        let dailyTotal = 0, monthlyTotal = 0, yearlyTotal = 0;
+        const now = new Date();
+        let hourlyCounts = new Array(12).fill(0);
+
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const orderId = docSnap.id;
+            const isPaid = data.paymentStatus === "Paid";
+            
+            let orderDate = data.timestamp ? data.timestamp.toDate() : new Date();
+
+            if (data.status === "Completed" && isPaid && data.amountDue) {
+                if (orderDate.toDateString() === now.toDateString()) dailyTotal += data.amountDue;
+                if (orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()) monthlyTotal += data.amountDue;
+                if (orderDate.getFullYear() === now.getFullYear()) yearlyTotal += data.amountDue;
+            }
+
+            if (orderDate.toDateString() === now.toDateString()) {
+                let hr = orderDate.getHours();
+                let index = Math.floor(hr / 2);
+                if (index < 12) hourlyCounts[index] += 1;
+            }
+
+            let deleteBtn = currentUserRole === "Admin" ? `<button class="action-btn btn-delete" onclick="deleteOrder('${orderId}')">Delete</button>` : "";
+            
+            let actionButtons = "";
+            if (!isPaid) {
+                actionButtons = `<button class="action-btn btn-pay" onclick="markAsPaid('${orderId}')">Receive Payment</button>`;
+            } else {
+                actionButtons += data.fileUrl ? `<a href="${data.fileUrl}" target="_blank" class="action-btn btn-view">View / Print</a>` : '';
+                if (data.status !== "Completed") {
+                    actionButtons += `<button class="action-btn btn-done" onclick="markAsComplete('${orderId}')">Mark as Done</button>`;
+                } else {
+                    actionButtons += `<span style="color:#9acd32; font-weight:600; font-size:12px; margin: 0 5px;">Finished</span>`;
+                }
+            }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong style="color: #ffffff;">${data.fileName || 'Unknown'}</strong><br><small style="color: #94a3b8;">Printer: ${data.printerModel || 'Default'} | Size: ${data.paperSize || 'Short'}</small></td>
+                <td>${data.totalPages} pages &times; ${data.copies} copy</td>
+                <td><strong style="color: #9acd32;">₱${data.amountDue ? data.amountDue.toFixed(2) : '0.00'}</strong></td>
+                <td>
+                    Job: <span class="status-badge ${data.status === 'Completed' ? 'bg-done' : 'bg-pending'}">${data.status || 'Pending'}</span><br>
+                    Pay: <span class="status-badge ${isPaid ? 'bg-paid' : 'bg-unpaid'}" style="margin-top:4px; display:inline-block;">${isPaid ? 'Paid' : 'Unpaid'}</span>
+                </td>
+                <td>${actionButtons} ${deleteBtn}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('dailyRev').innerText = `₱${dailyTotal.toFixed(2)}`;
+        document.getElementById('monthlyRev').innerText = `₱${monthlyTotal.toFixed(2)}`;
+        document.getElementById('yearlyRev').innerText = `₱${yearlyTotal.toFixed(2)}`;
+
+        initChart(hourlyCounts);
+    });
+
+    window.markAsPaid = async function(id) {
+        if(confirm("Have you received the payment from the customer?")) {
+            await updateDoc(doc(db, "print_jobs", id), { paymentStatus: "Paid" });
+        }
+    }
+
+    window.markAsComplete = async function(id) {
+        await updateDoc(doc(db, "print_jobs", id), { status: "Completed" });
+    }
+
+    window.deleteOrder = async function(id) {
+        if (currentUserRole !== "Admin") return;
+        let adminPass = Object.values(ACCOUNTS).find(acc => acc.role === "Admin").pass;
+        if (prompt("Enter Admin Password to delete:") !== adminPass) { alert("Incorrect password!"); return; }
+        if (confirm("Are you sure you want to delete this order?")) await deleteDoc(doc(db, "print_jobs", id));
+    }
+
+    window.deleteAllCompletedOrders = async function() {
+        if (currentUserRole !== "Admin") return;
+        let adminPass = Object.values(ACCOUNTS).find(acc => acc.role === "Admin").pass;
+        if (prompt("Enter Admin Password for mass deletion:") !== adminPass) { alert("Incorrect password!"); return; }
+        if (confirm("Are you sure you want to delete ALL completed orders?")) {
+            globalSnapshot.forEach((docSnap) => {
+                if (docSnap.data().status === "Completed") {
+                    deleteDoc(doc(db, "print_jobs", docSnap.id));
+                }
+            });
+            alert("All completed orders have been deleted.");
+        }
+    }
+</script>
+</body>
+</html>
