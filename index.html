@@ -276,7 +276,7 @@
             border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.8);
             z-index: 2000;
-            width: 350px;
+            width: 380px;
             max-height: 90vh;
             overflow-y: auto;
         }
@@ -331,9 +331,9 @@
     </header>
 
     <div class="revenue-grid">
-        <div class="revenue-card"><p>Today's Revenue (Daily)</p><h3 id="dailyRev">₱0.00</h3></div>
-        <div class="revenue-card monthly"><p>This Month's Revenue</p><h3 id="monthlyRev">₱0.00</h3></div>
-        <div class="revenue-card yearly"><p>This Year's Revenue</p><h3 id="yearlyRev">₱0.00</h3></div>
+        <div class="revenue-card"><p>Today's Revenue (24 Hours)</p><h3 id="dailyRev">₱0.00</h3></div>
+        <div class="revenue-card monthly"><p>This Month's Revenue (30 Days)</p><h3 id="monthlyRev">₱0.00</h3></div>
+        <div class="revenue-card yearly"><p>This Year's Revenue (12 Months)</p><h3 id="yearlyRev">₱0.00</h3></div>
     </div>
 
     <!-- OPERATIONS PER HOUR LINE CHART -->
@@ -394,6 +394,22 @@
     <label style="color: #38bdf8; font-weight: 600;">Admin Messenger Address / Link</label>
     <input type="text" id="adminMessengerInput" placeholder="e.g. https://m.me/yourpage or profile link">
 
+    <hr style="border: 0; border-top: 1px solid #1e293b; margin: 15px 0;">
+
+    <label style="color: #9acd32; font-weight: 600;">Print Pricing Options (₱ per page)</label>
+    
+    <label>Short / A4 / Small Sizes - B&W (Monochrome)</label>
+    <input type="number" id="priceShortMono" step="0.25" min="0">
+
+    <label>Short / A4 / Small Sizes - Color</label>
+    <input type="number" id="priceShortColor" step="0.25" min="0">
+
+    <label>Long (Folio/Legal) - B&W (Monochrome)</label>
+    <input type="number" id="priceLongMono" step="0.25" min="0">
+
+    <label>Long (Folio/Legal) - Color</label>
+    <input type="number" id="priceLongColor" step="0.25" min="0">
+
     <div class="settings-actions">
         <button class="btn-close" onclick="toggleSettingsModal()">Cancel</button>
         <button class="btn-save" onclick="saveCredentials()">Save Changes</button>
@@ -424,13 +440,13 @@
     </div>
 </div>
 
-<div class="footer-credit">App developed by: dandarz &copy; 2026</div>
+<div class="footer-credit">App developed by: dandarz &copy; 2026[cite: 1]</div>
 
 <!-- FIREBASE MODULAR SDKS & APP LOGIC -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-analytics.js";
-    import { getFirestore, doc, collection, onSnapshot, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+    import { getFirestore, doc, collection, onSnapshot, updateDoc, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
 
     let ACCOUNTS = JSON.parse(localStorage.getItem("printShopAccounts")) || {
         "admin": { pass: "admin666", role: "Admin" },
@@ -438,6 +454,13 @@
     };
 
     let adminMessengerUrl = localStorage.getItem("adminMessengerUrl") || "https://www.messenger.com";
+
+    let printPricing = JSON.parse(localStorage.getItem("printShopPricing")) || {
+        shortMono: 1.00,
+        shortColor: 2.00,
+        longMono: 2.00,
+        longColor: 3.00
+    };
 
     let currentUserRole = "";
     let currentActiveUsername = "";
@@ -456,17 +479,20 @@
         document.getElementById('newUsernameInput').value = target;
         document.getElementById('newPasswordInput').value = ACCOUNTS[target].pass;
         document.getElementById('adminMessengerInput').value = adminMessengerUrl;
+
+        document.getElementById('priceShortMono').value = printPricing.shortMono;
+        document.getElementById('priceShortColor').value = printPricing.shortColor;
+        document.getElementById('priceLongMono').value = printPricing.longMono;
+        document.getElementById('priceLongColor').value = printPricing.longColor;
     }
 
     window.saveCredentials = function() {
-        // 2-Step Verification 1: Current Admin Password Check
         let adminPassCheck = prompt("2-Step Verification (Step 1/2): Enter current Admin Password to confirm changes:");
         if (adminPassCheck !== ACCOUNTS["admin"].pass) {
             alert("Incorrect Admin Password! Changes cancelled.");
             return;
         }
 
-        // 2-Step Verification 2: Confirmation Prompt
         let confirmSave = confirm("2-Step Verification (Step 2/2): Are you sure you want to save these settings changes?");
         if (!confirmSave) return;
 
@@ -475,8 +501,18 @@
         const newP = document.getElementById('newPasswordInput').value.trim();
         const newMsgr = document.getElementById('adminMessengerInput').value.trim();
 
+        const sMono = parseFloat(document.getElementById('priceShortMono').value);
+        const sColor = parseFloat(document.getElementById('priceShortColor').value);
+        const lMono = parseFloat(document.getElementById('priceLongMono').value);
+        const lColor = parseFloat(document.getElementById('priceLongColor').value);
+
         if (!newU || !newP) {
             alert("Username and password cannot be empty!");
+            return;
+        }
+
+        if (isNaN(sMono) || isNaN(sColor) || isNaN(lMono) || isNaN(lColor)) {
+            alert("Please enter valid numbers for print prices!");
             return;
         }
 
@@ -491,12 +527,19 @@
             ACCOUNTS[target].pass = newP;
         }
 
-        // Save updated accounts and messenger link
         localStorage.setItem("printShopAccounts", JSON.stringify(ACCOUNTS));
         if (newMsgr) {
             adminMessengerUrl = newMsgr;
             localStorage.setItem("adminMessengerUrl", adminMessengerUrl);
         }
+
+        printPricing = {
+            shortMono: sMono,
+            shortColor: sColor,
+            longMono: lMono,
+            longColor: lColor
+        };
+        localStorage.setItem("printShopPricing", JSON.stringify(printPricing));
 
         alert("Settings updated successfully! Please log in again if your credentials have changed.");
         
@@ -665,7 +708,71 @@
         }
     });
 
-    onSnapshot(collection(db, "print_jobs"), (snapshot) => {
+    // Listen to persistent Sales Summary Metrics so sales remain safe even if print jobs are deleted
+    onSnapshot(doc(db, "sales_summary", "metrics"), (docSnap) => {
+        if (docSnap.exists) {
+            const data = docSnap.data();
+            document.getElementById('dailyRev').innerText = `₱${(data.dailyRevenue || 0).toFixed(2)}`;
+            document.getElementById('monthlyRev').innerText = `₱${(data.monthlyRevenue || 0).toFixed(2)}`;
+            document.getElementById('yearlyRev').innerText = `₱${(data.yearlyRevenue || 0).toFixed(2)}`;
+        }
+    });
+
+    // Function to calculate and update timeframe-based revenues safely
+    async function calculateAndSaveRevenues(snapshot) {
+        const now = new Date();
+        let dailyTotal = 0, monthlyTotal = 0, yearlyTotal = 0;
+        let hourlyCounts = new Array(12).fill(0);
+
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const isPaid = data.paymentStatus === "Paid";
+            let orderDate = data.timestamp ? data.timestamp.toDate() : new Date();
+
+            if (data.status === "Completed" && isPaid && data.amountDue) {
+                const diffTime = now - orderDate;
+                const diffHours = diffTime / (1000 * 60 * 60);
+                const diffDays = diffTime / (1000 * 60 * 60 * 24);
+                const diffMonths = diffDays / 30; // approx 30 days per month
+                const diffYears = diffDays / 365; // approx 365 days per year
+
+                // Daily: 24 hours timeframe
+                if (diffHours <= 24) {
+                    dailyTotal += data.amountDue;
+                }
+                // Monthly: 30 days timeframe
+                if (diffDays <= 30) {
+                    monthlyTotal += data.amountDue;
+                }
+                // Yearly: 12 months (365 days) timeframe
+                if (diffDays <= 365) {
+                    yearlyTotal += data.amountDue;
+                }
+            }
+
+            if (orderDate.toDateString() === now.toDateString()) {
+                let hr = orderDate.getHours();
+                let index = Math.floor(hr / 2);
+                if (index < 12) hourlyCounts[index] += 1;
+            }
+        });
+
+        // Save safely to database so metrics persist even when orders are cleared
+        try {
+            await setDoc(doc(db, "sales_summary", "metrics"), {
+                dailyRevenue: dailyTotal,
+                monthlyRevenue: monthlyTotal,
+                yearlyRevenue: yearlyTotal,
+                lastUpdated: new Date()
+            }, { merge: true });
+        } catch (e) {
+            console.error("Error saving sales summary: ", e);
+        }
+
+        initChart(hourlyCounts);
+    }
+
+    onSnapshot(collection(db, "print_jobs"), async (snapshot) => {
         globalSnapshot = snapshot; 
         const tbody = document.getElementById('ordersTableBody');
         tbody.innerHTML = '';
@@ -676,28 +783,12 @@
             return;
         }
 
-        let dailyTotal = 0, monthlyTotal = 0, yearlyTotal = 0;
-        const now = new Date();
-        let hourlyCounts = new Array(12).fill(0);
+        await calculateAndSaveRevenues(snapshot);
 
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const orderId = docSnap.id;
             const isPaid = data.paymentStatus === "Paid";
-            
-            let orderDate = data.timestamp ? data.timestamp.toDate() : new Date();
-
-            if (data.status === "Completed" && isPaid && data.amountDue) {
-                if (orderDate.toDateString() === now.toDateString()) dailyTotal += data.amountDue;
-                if (orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()) monthlyTotal += data.amountDue;
-                if (orderDate.getFullYear() === now.getFullYear()) yearlyTotal += data.amountDue;
-            }
-
-            if (orderDate.toDateString() === now.toDateString()) {
-                let hr = orderDate.getHours();
-                let index = Math.floor(hr / 2);
-                if (index < 12) hourlyCounts[index] += 1;
-            }
 
             let deleteBtn = currentUserRole === "Admin" ? `<button class="action-btn btn-delete" onclick="deleteOrder('${orderId}')">Delete</button>` : "";
             
@@ -718,7 +809,7 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><strong style="color: #ffffff;">${data.customerName || 'N/A'}</strong><br><small style="color: #94a3b8;">${data.customerContact || ''}</small></td>
-                <td><strong style="color: #ffffff;">${data.fileName || 'Unknown'}</strong><br><small style="color: #94a3b8;">Printer: ${data.printerModel || 'Default'} | Size: ${data.paperSize || 'Short'}</small></td>
+                <td><strong style="color: #ffffff;">${data.fileName || 'Unknown'}</strong><br><small style="color: #94a3b8;">Size: ${data.paperSize || 'Short'} | Type: ${data.printType || 'Mono'}</small></td>
                 <td>${data.totalPages} pages &times; ${data.copies} copy</td>
                 <td><strong style="color: #9acd32;">₱${data.amountDue ? data.amountDue.toFixed(2) : '0.00'}</strong></td>
                 <td>
@@ -729,12 +820,6 @@
             `;
             tbody.appendChild(tr);
         });
-
-        document.getElementById('dailyRev').innerText = `₱${dailyTotal.toFixed(2)}`;
-        document.getElementById('monthlyRev').innerText = `₱${monthlyTotal.toFixed(2)}`;
-        document.getElementById('yearlyRev').innerText = `₱${yearlyTotal.toFixed(2)}`;
-
-        initChart(hourlyCounts);
     });
 
     window.receivePaymentAndOpenAdminMessenger = async function(id) {
@@ -752,20 +837,22 @@
         if (currentUserRole !== "Admin") return;
         let adminPass = Object.values(ACCOUNTS).find(acc => acc.role === "Admin").pass;
         if (prompt("Enter Admin Password to delete:") !== adminPass) { alert("Incorrect password!"); return; }
-        if (confirm("Are you sure you want to delete this order?")) await deleteDoc(doc(db, "print_jobs", id));
+        if (confirm("Are you sure you want to delete this order? Sales reports will remain safe and unaffected.")) {
+            await deleteDoc(doc(db, "print_jobs", id));
+        }
     }
 
     window.deleteAllCompletedOrders = async function() {
         if (currentUserRole !== "Admin") return;
         let adminPass = Object.values(ACCOUNTS).find(acc => acc.role === "Admin").pass;
         if (prompt("Enter Admin Password for mass deletion:") !== adminPass) { alert("Incorrect password!"); return; }
-        if (confirm("Are you sure you want to delete ALL completed orders?")) {
+        if (confirm("Are you sure you want to delete ALL completed orders? Sales records will NOT be deleted.")) {
             globalSnapshot.forEach((docSnap) => {
                 if (docSnap.data().status === "Completed") {
                     deleteDoc(doc(db, "print_jobs", docSnap.id));
                 }
             });
-            alert("All completed orders have been deleted.");
+            alert("All completed orders have been removed, but your sales statistics remain safe.");
         }
     }
 </script>
