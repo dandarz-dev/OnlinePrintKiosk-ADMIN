@@ -678,15 +678,24 @@
             let deleteBtn = currentUserRole === "Admin" ? `<button class="action-btn btn-delete" onclick="deleteOrder('${orderId}')">Delete</button>` : "";
             
             let actionButtons = "";
-            if (!isPaid) {
-                actionButtons = `<button class="action-btn btn-pay" onclick="markAsPaid('${orderId}')">Receive Payment</button>`;
+            
+            // Gi-fix ang File Viewing Link: Direktang mo-open sa bag-ong tab kon aduna'y fileUrl
+            if (data.fileUrl) {
+                actionButtons += `<a href="${data.fileUrl}" target="_blank" class="action-btn btn-view">View / Print</a>`;
             } else {
-                actionButtons += data.fileUrl ? `<a href="${data.fileUrl}" target="_blank" class="action-btn btn-view">View / Print</a>` : `<button class="action-btn btn-view" onclick="window.print()">Print / Save</button>`;
-                if (data.status !== "Completed") {
-                    actionButtons += `<button class="action-btn btn-done" onclick="markAsComplete('${orderId}')">Mark as Done</button>`;
-                } else {
-                    actionButtons += `<span style="color:#9acd32; font-weight:600; font-size:12px; margin: 0 5px;">Finished</span>`;
-                }
+                actionButtons += `<span style="color:#f87171; font-size:11px; font-weight:600; display:inline-block; margin-right:4px;">No File Link</span>`;
+            }
+
+            // Payment Button if Unpaid
+            if (!isPaid) {
+                actionButtons += `<button class="action-btn btn-pay" onclick="markAsPaid('${orderId}')">Receive Payment</button>`;
+            }
+
+            // Completion Status Button
+            if (data.status !== "Completed") {
+                actionButtons += `<button class="action-btn btn-done" onclick="markAsComplete('${orderId}')">Mark as Done</button>`;
+            } else {
+                actionButtons += `<span style="color:#9acd32; font-weight:600; font-size:12px; margin: 0 5px;">Finished</span>`;
             }
 
             const tr = document.createElement('tr');
