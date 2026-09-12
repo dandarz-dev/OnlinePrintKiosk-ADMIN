@@ -159,7 +159,6 @@
         button.action-btn, a.action-btn { color: white; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 500; text-decoration: none; display: inline-block; transition: background 0.2s; margin-right: 4px; margin-bottom: 4px; }
         .btn-done { background: #9acd32; color: #0b0f17; font-weight: 600; } .btn-done:hover { background: #8ae228; }
         .btn-view { background: #3b82f6; } .btn-view:hover { background: #2563eb; }
-        .btn-link { background: #8b5cf6; } .btn-link:hover { background: #7c3aed; }
         .btn-delete { background: #dc2626; } .btn-delete:hover { background: #b91c1c; }
         .btn-pay { background: #fbbf24; color: #0b0f17; font-weight: 600; } .btn-pay:hover { background: #f59e0b; }
         
@@ -679,24 +678,15 @@
             let deleteBtn = currentUserRole === "Admin" ? `<button class="action-btn btn-delete" onclick="deleteOrder('${orderId}')">Delete</button>` : "";
             
             let actionButtons = "";
-            
-            // Kon naay fileUrl, ipakita ang View button. Kon wala, hatagan og buton para ma-add ang link manually!
-            if (data.fileUrl) {
-                actionButtons += `<a href="${data.fileUrl}" target="_blank" class="action-btn btn-view">View File</a>`;
-            } else {
-                actionButtons += `<button class="action-btn btn-link" onclick="addFileUrl('${orderId}')">Add Link</button>`;
-            }
-
-            // Payment Button if Unpaid
             if (!isPaid) {
-                actionButtons += `<button class="action-btn btn-pay" onclick="markAsPaid('${orderId}')">Receive Payment</button>`;
-            }
-
-            // Completion Status Button
-            if (data.status !== "Completed") {
-                actionButtons += `<button class="action-btn btn-done" onclick="markAsComplete('${orderId}')">Mark as Done</button>`;
+                actionButtons = `<button class="action-btn btn-pay" onclick="markAsPaid('${orderId}')">Receive Payment</button>`;
             } else {
-                actionButtons += `<span style="color:#9acd32; font-weight:600; font-size:12px; margin: 0 5px;">Finished</span>`;
+                actionButtons += data.fileUrl ? `<a href="${data.fileUrl}" target="_blank" class="action-btn btn-view">View / Print</a>` : `<button class="action-btn btn-view" onclick="window.print()">Print / Save</button>`;
+                if (data.status !== "Completed") {
+                    actionButtons += `<button class="action-btn btn-done" onclick="markAsComplete('${orderId}')">Mark as Done</button>`;
+                } else {
+                    actionButtons += `<span style="color:#9acd32; font-weight:600; font-size:12px; margin: 0 5px;">Finished</span>`;
+                }
             }
 
             const tr = document.createElement('tr');
@@ -720,15 +710,6 @@
 
         initChart(hourlyCounts);
     });
-
-    // Pamaagi para ma-butangan og file URL kung wala gi-send sa customer portal
-    window.addFileUrl = async function(id) {
-        let urlInput = prompt("Enter or paste the file URL (Google Drive, Dropbox, etc.):");
-        if (urlInput && urlInput.trim() !== "") {
-            await updateDoc(doc(db, "print_jobs", id), { fileUrl: urlInput.trim() });
-            alert("File URL added successfully!");
-        }
-    }
 
     window.markAsPaid = async function(id) {
         if(confirm("Have you received the payment from the customer?")) {
