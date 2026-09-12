@@ -351,6 +351,7 @@
         <table>
             <thead>
                 <tr>
+                    <th>Customer Name</th>
                     <th>File Name & Printer</th>
                     <th>Pages & Copies</th>
                     <th>Amount Due</th>
@@ -359,7 +360,7 @@
                 </tr>
             </thead>
             <tbody id="ordersTableBody">
-                <tr><td colspan="5" class="no-orders">Waiting for orders...</td></tr>
+                <tr><td colspan="6" class="no-orders">Waiting for orders...</td></tr>
             </tbody>
         </table>
     </div>
@@ -646,7 +647,7 @@
         tbody.innerHTML = '';
 
         if (snapshot.empty) {
-            tbody.innerHTML = `<tr><td colspan="5" class="no-orders">No new print orders yet.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="no-orders">No new print orders yet.</td></tr>`;
             initChart([0,0,0,0,0,0,0,0,0,0,0,0]);
             return;
         }
@@ -680,7 +681,7 @@
             if (!isPaid) {
                 actionButtons = `<button class="action-btn btn-pay" onclick="markAsPaid('${orderId}')">Receive Payment</button>`;
             } else {
-                actionButtons += data.fileUrl ? `<a href="${data.fileUrl}" target="_blank" class="action-btn btn-view">View / Print</a>` : '';
+                actionButtons += data.fileUrl ? `<a href="${data.fileUrl}" target="_blank" class="action-btn btn-view">View / Print</a>` : `<button class="action-btn btn-view" onclick="window.print()">Print / Save</button>`;
                 if (data.status !== "Completed") {
                     actionButtons += `<button class="action-btn btn-done" onclick="markAsComplete('${orderId}')">Mark as Done</button>`;
                 } else {
@@ -690,6 +691,7 @@
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
+                <td><strong style="color: #ffffff;">${data.customerName || 'N/A'}</strong><br><small style="color: #94a3b8;">${data.customerContact || ''}</small></td>
                 <td><strong style="color: #ffffff;">${data.fileName || 'Unknown'}</strong><br><small style="color: #94a3b8;">Printer: ${data.printerModel || 'Default'} | Size: ${data.paperSize || 'Short'}</small></td>
                 <td>${data.totalPages} pages &times; ${data.copies} copy</td>
                 <td><strong style="color: #9acd32;">₱${data.amountDue ? data.amountDue.toFixed(2) : '0.00'}</strong></td>
