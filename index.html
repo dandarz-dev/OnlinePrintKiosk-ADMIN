@@ -680,9 +680,9 @@
             
             let actionButtons = "";
             if (!isPaid) {
-                actionButtons = `<button class="action-btn btn-pay" onclick="receivePaymentAndOpenMessenger('${orderId}', '${data.messengerUrl || ''}')">Receive Payment & Message</button>`;
+                actionButtons = `<button class="action-btn btn-pay" onclick="receivePaymentAndOpenAdminMessenger('${orderId}', '${data.adminMessengerUrl || ''}')">Receive Payment & Admin Msgr</button>`;
             } else {
-                actionButtons += data.messengerUrl ? `<a href="${data.messengerUrl}" target="_blank" class="action-btn btn-msgr">Open Messenger</a>` : "";
+                actionButtons += data.adminMessengerUrl ? `<a href="${data.adminMessengerUrl}" target="_blank" class="action-btn btn-msgr">Open Admin Msgr</a>` : "";
                 actionButtons += data.fileUrl ? `<a href="${data.fileUrl}" target="_blank" class="action-btn btn-view">View File</a>` : "";
                 
                 if (data.status !== "Completed") {
@@ -714,17 +714,16 @@
         initChart(hourlyCounts);
     });
 
-    window.receivePaymentAndOpenMessenger = async function(id, messengerUrl) {
+    window.receivePaymentAndOpenAdminMessenger = async function(id, adminMessengerUrl) {
         if(confirm("Nasubhan na ba nimo ang bayad gikan sa customer?")) {
             await updateDoc(doc(db, "print_jobs", id), { paymentStatus: "Paid" });
             
-            if (messengerUrl && messengerUrl.trim() !== "" && messengerUrl !== "undefined") {
-                window.open(messengerUrl, '_blank');
+            if (adminMessengerUrl && adminMessengerUrl.trim() !== "" && adminMessengerUrl !== "undefined") {
+                window.open(adminMessengerUrl, '_blank');
             } else {
-                // Kung wala silay gibutang nga Messenger link, i-abli ang general m.me o mangayo og link
-                let fbLink = prompt("Walay nahimutang nga Messenger link sa database. I-input ang m.me/ username o Facebook link sa customer (o ibilin nga blangko):");
-                if (fbLink && fbLink.trim() !== "") {
-                    let finalLink = fbLink.startsWith('http') ? fbLink : `https://m.me/${fbLink}`;
+                let adminLink = prompt("I-input ang link sa imong Admin Messenger inbox o page chat (pananglitan: https://m.me/yourpage o facebook.com):");
+                if (adminLink && adminLink.trim() !== "") {
+                    let finalLink = adminLink.startsWith('http') ? adminLink : `https://${adminLink}`;
                     window.open(finalLink, '_blank');
                 } else {
                     alert("Narehistro na nga Paid!");
