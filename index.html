@@ -681,7 +681,6 @@
             if (!isPaid) {
                 actionButtons = `<button class="action-btn btn-pay" onclick="markAsPaid('${orderId}')">Receive Payment</button>`;
             } else {
-                actionButtons += data.fileUrl ? `<a href="${data.fileUrl}" target="_blank" class="action-btn btn-view">View / Print</a>` : `<button class="action-btn btn-view" onclick="window.print()">Print / Save</button>`;
                 if (data.status !== "Completed") {
                     actionButtons += `<button class="action-btn btn-done" onclick="markAsComplete('${orderId}')">Mark as Done</button>`;
                 } else {
@@ -729,7 +728,7 @@
     }
 
     window.deleteAllCompletedOrders = async function() {
-        if (currentUserRole !== "Admin") return;
+        if (currentUserRole !== "Admin" ) return;
         let adminPass = Object.values(ACCOUNTS).find(acc => acc.role === "Admin").pass;
         if (prompt("Enter Admin Password for mass deletion:") !== adminPass) { alert("Incorrect password!"); return; }
         if (confirm("Are you sure you want to delete ALL completed orders?")) {
