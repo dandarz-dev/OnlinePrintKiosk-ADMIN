@@ -680,9 +680,9 @@
             
             let actionButtons = "";
             if (!isPaid) {
-                actionButtons = `<button class="action-btn btn-pay" onclick="receivePaymentAndOpenAdminMessenger('${orderId}', '${data.adminMessengerUrl || ''}')">Receive Payment & Admin Msgr</button>`;
+                actionButtons = `<button class="action-btn btn-pay" onclick="receivePaymentAndOpenAdminMessenger('${orderId}')">Confirm & Open Admin Msgr</button>`;
             } else {
-                actionButtons += data.adminMessengerUrl ? `<a href="${data.adminMessengerUrl}" target="_blank" class="action-btn btn-msgr">Open Admin Msgr</a>` : "";
+                actionButtons += `<a href="https://www.messenger.com" target="_blank" class="action-btn btn-msgr">Open Admin Msgr</a>`;
                 actionButtons += data.fileUrl ? `<a href="${data.fileUrl}" target="_blank" class="action-btn btn-view">View File</a>` : "";
                 
                 if (data.status !== "Completed") {
@@ -714,21 +714,12 @@
         initChart(hourlyCounts);
     });
 
-    window.receivePaymentAndOpenAdminMessenger = async function(id, adminMessengerUrl) {
-        if(confirm("Nasubhan na ba nimo ang bayad gikan sa customer?")) {
+    window.receivePaymentAndOpenAdminMessenger = async function(id) {
+        if(confirm("Nasubhan o nakumpirma na ba nimo ang bayad gikan sa customer?")) {
             await updateDoc(doc(db, "print_jobs", id), { paymentStatus: "Paid" });
             
-            if (adminMessengerUrl && adminMessengerUrl.trim() !== "" && adminMessengerUrl !== "undefined") {
-                window.open(adminMessengerUrl, '_blank');
-            } else {
-                let adminLink = prompt("I-input ang link sa imong Admin Messenger inbox o page chat (pananglitan: https://m.me/yourpage o facebook.com):");
-                if (adminLink && adminLink.trim() !== "") {
-                    let finalLink = adminLink.startsWith('http') ? adminLink : `https://${adminLink}`;
-                    window.open(finalLink, '_blank');
-                } else {
-                    alert("Narehistro na nga Paid!");
-                }
-            }
+            // Abli dayon sa messenger.com o sa imong personal messenger/page aron makita ang chat sa customer
+            window.open("https://www.messenger.com", "_blank");
         }
     }
 
