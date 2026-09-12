@@ -276,10 +276,12 @@
             border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.8);
             z-index: 2000;
-            width: 320px;
+            width: 350px;
+            max-height: 90vh;
+            overflow-y: auto;
         }
-        .settings-modal h3 { color: #fff; font-size: 18px; margin-bottom: 15px; font-weight: 600; }
-        .settings-modal label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 5px; }
+        .settings-modal h3 { color: #fff; font-size: 18px; margin-bottom: 15px; font-weight: 600; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
+        .settings-modal label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 5px; margin-top: 10px; }
         .settings-modal select, .settings-modal input {
             width: 100%;
             background: #0f172a;
@@ -288,9 +290,9 @@
             padding: 10px;
             border-radius: 8px;
             font-size: 14px;
-            margin-bottom: 15px;
+            margin-bottom: 5px;
         }
-        .settings-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .settings-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
         .settings-actions button { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
         .btn-save { background: #9acd32; color: #0b0f17; }
         .btn-save:hover { background: #8ae228; }
@@ -369,11 +371,12 @@
 
 <!-- FLOATING BUTTONS (RIGHT SIDE) -->
 <button class="floating-calc-btn" onclick="toggleCalculator()">Calculator</button>
-<button class="floating-settings-btn" id="floatingSettingsBtn" onclick="toggleSettingsModal()">Change Credentials</button>
+<button class="floating-settings-btn" id="floatingSettingsBtn" onclick="toggleSettingsModal()">SETTINGS</button>
 
 <!-- SETTINGS MODAL -->
 <div class="settings-modal" id="settingsModal">
-    <h3>Update Credentials</h3>
+    <h3>Dashboard SETTINGS</h3>
+    
     <label>Select Account to Modify</label>
     <select id="targetAccount" onchange="loadAccountDetails()">
         <option value="admin">Admin</option>
@@ -385,6 +388,11 @@
     
     <label>New Password</label>
     <input type="text" id="newPasswordInput">
+
+    <hr style="border: 0; border-top: 1px solid #1e293b; margin: 15px 0;">
+
+    <label style="color: #38bdf8; font-weight: 600;">Admin Messenger Address / Link</label>
+    <input type="text" id="adminMessengerInput" placeholder="e.g. https://m.me/yourpage or profile link">
 
     <div class="settings-actions">
         <button class="btn-close" onclick="toggleSettingsModal()">Cancel</button>
@@ -429,6 +437,8 @@
         "bantay": { pass: "bantay123", role: "Staff (Bantay)" }
     };
 
+    let adminMessengerUrl = localStorage.getItem("adminMessengerUrl") || "https://www.messenger.com";
+
     let currentUserRole = "";
     let currentActiveUsername = "";
 
@@ -445,18 +455,25 @@
         const target = document.getElementById('targetAccount').value;
         document.getElementById('newUsernameInput').value = target;
         document.getElementById('newPasswordInput').value = ACCOUNTS[target].pass;
+        document.getElementById('adminMessengerInput').value = adminMessengerUrl;
     }
 
     window.saveCredentials = function() {
-        let adminPassCheck = prompt("Enter current Admin Password to confirm changes:");
+        // 2-Step Verification 1: Current Admin Password Check
+        let adminPassCheck = prompt("2-Step Verification (Step 1/2): Enter current Admin Password to confirm changes:");
         if (adminPassCheck !== ACCOUNTS["admin"].pass) {
             alert("Incorrect Admin Password! Changes cancelled.");
             return;
         }
 
+        // 2-Step Verification 2: Confirmation Prompt
+        let confirmSave = confirm("2-Step Verification (Step 2/2): Are you sure you want to save these settings changes?");
+        if (!confirmSave) return;
+
         const target = document.getElementById('targetAccount').value;
         const newU = document.getElementById('newUsernameInput').value.trim().toLowerCase();
         const newP = document.getElementById('newPasswordInput').value.trim();
+        const newMsgr = document.getElementById('adminMessengerInput').value.trim();
 
         if (!newU || !newP) {
             alert("Username and password cannot be empty!");
@@ -474,8 +491,14 @@
             ACCOUNTS[target].pass = newP;
         }
 
+        // Save updated accounts and messenger link
         localStorage.setItem("printShopAccounts", JSON.stringify(ACCOUNTS));
-        alert("Credentials updated successfully! Please log in again with your updated credentials.");
+        if (newMsgr) {
+            adminMessengerUrl = newMsgr;
+            localStorage.setItem("adminMessengerUrl", adminMessengerUrl);
+        }
+
+        alert("Settings updated successfully! Please log in again if your credentials have changed.");
         
         sessionStorage.removeItem("printShopUser");
         location.reload();
@@ -682,7 +705,7 @@
             if (!isPaid) {
                 actionButtons = `<button class="action-btn btn-pay" onclick="receivePaymentAndOpenAdminMessenger('${orderId}')">Confirm & Open Admin Msgr</button>`;
             } else {
-                actionButtons += `<a href="https://www.messenger.com" target="_blank" class="action-btn btn-msgr">Open Admin Msgr</a>`;
+                actionButtons += `<a href="${adminMessengerUrl}" target="_blank" class="action-btn btn-msgr">Open Admin Msgr</a>`;
                 actionButtons += data.fileUrl ? `<a href="${data.fileUrl}" target="_blank" class="action-btn btn-view">View File</a>` : "";
                 
                 if (data.status !== "Completed") {
@@ -715,11 +738,9 @@
     });
 
     window.receivePaymentAndOpenAdminMessenger = async function(id) {
-        if(confirm("Nasubhan o nakumpirma na ba nimo ang bayad gikan sa customer?")) {
+        if(confirm("Have you received and confirmed the payment from the customer?")) {
             await updateDoc(doc(db, "print_jobs", id), { paymentStatus: "Paid" });
-            
-            // Abli dayon sa messenger.com o sa imong personal messenger/page aron makita ang chat sa customer
-            window.open("https://www.messenger.com", "_blank");
+            window.open(adminMessengerUrl, "_blank");
         }
     }
 
