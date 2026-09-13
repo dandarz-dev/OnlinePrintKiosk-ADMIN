@@ -352,7 +352,7 @@
 
     <div class="revenue-grid">
         <div class="revenue-card">
-            <button class="reset-sales-btn" onclick="resetDailySales()">Reset</button>
+            <button class="reset-sales-btn" id="resetSalesBtn" style="display: none;" onclick="resetDailySales()">Reset</button>
             <p>Today's Revenue (24 Hours)</p>
             <h3 id="dailyRev">₱0.00</h3>
         </div>
@@ -707,6 +707,10 @@
         if (currentUserRole === "Admin") {
             document.getElementById('massDeleteContainer').innerHTML = `<button class="mass-delete-btn" onclick="deleteAllCompletedOrders()">Delete All Completed</button>`;
             document.getElementById('floatingSettingsBtn').style.display = 'flex';
+            
+            // I-show ang Reset button kon Admin ang naka-login
+            const resetBtn = document.getElementById('resetSalesBtn');
+            if (resetBtn) resetBtn.style.display = 'block';
         }
     }
 
