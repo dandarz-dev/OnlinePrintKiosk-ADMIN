@@ -105,12 +105,32 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
             border: 1px solid #1e293b;
             border-left: 5px solid #9acd32; 
+            position: relative;
         }
         .revenue-card.monthly { border-left-color: #38bdf8; }
         .revenue-card.yearly { border-left-color: #fbbf24; }
         
         .revenue-card p { color: #94a3b8; font-size: 13px; font-weight: 500; }
         .revenue-card h3 { color: #ffffff; font-size: 22px; margin-top: 5px; font-weight: 600; }
+
+        .reset-sales-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(220, 38, 38, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .reset-sales-btn:hover {
+            background: #dc2626;
+            color: white;
+        }
 
         /* SALES CHART CARD */
         .chart-card {
@@ -331,7 +351,11 @@
     </header>
 
     <div class="revenue-grid">
-        <div class="revenue-card"><p>Today's Revenue (24 Hours)</p><h3 id="dailyRev">₱0.00</h3></div>
+        <div class="revenue-card">
+            <button class="reset-sales-btn" onclick="resetDailySales()">Reset</button>
+            <p>Today's Revenue (24 Hours)</p>
+            <h3 id="dailyRev">₱0.00</h3>
+        </div>
         <div class="revenue-card monthly"><p>This Month's Revenue (30 Days)</p><h3 id="monthlyRev">₱0.00</h3></div>
         <div class="revenue-card yearly"><p>This Year's Revenue (12 Months)</p><h3 id="yearlyRev">₱0.00</h3></div>
     </div>
@@ -699,6 +723,7 @@
     checkLogin();
 
     let globalSnapshot = null;
+    let manualOffsetDailyRevenue = parseFloat(localStorage.getItem("manualOffsetDailyRevenue")) || 0;
 
     onSnapshot(doc(db, "inventory", "paper_stock"), (docSnap) => {
         if (docSnap.exists) {
@@ -712,11 +737,45 @@
     onSnapshot(doc(db, "sales_summary", "metrics"), (docSnap) => {
         if (docSnap.exists) {
             const data = docSnap.data();
-            document.getElementById('dailyRev').innerText = `₱${(data.dailyRevenue || 0).toFixed(2)}`;
+            let netDaily = Math.max(0, (data.dailyRevenue || 0) - manualOffsetDailyRevenue);
+            document.getElementById('dailyRev').innerText = `₱${netDaily.toFixed(2)}`;
             document.getElementById('monthlyRev').innerText = `₱${(data.monthlyRevenue || 0).toFixed(2)}`;
             document.getElementById('yearlyRev').innerText = `₱${(data.yearlyRevenue || 0).toFixed(2)}`;
         }
     });
+
+    window.resetDailySales = async function() {
+        let passwordAttempt = prompt("Enter Password to reset Today's Sales:");
+        if (!passwordAttempt) return;
+
+        let matchedAccount = Object.values(ACCOUNTS).find(acc => acc.pass === passwordAttempt);
+        if (!matchedAccount) {
+            alert("Incorrect password!");
+            return;
+        }
+
+        let confirmReset = confirm("Are you sure you want to reset today's revenue counter to ₱0.00?");
+        if (!confirmReset) return;
+
+        // Fetch current daily revenue base to compute offset
+        try {
+            const docRef = doc(db, "sales_summary", "metrics");
+            const docSnap = await getDoc(docRef);
+            let currentRawDaily = 0;
+            if (docSnap.exists()) {
+                currentRawDaily = docSnap.data().dailyRevenue || 0;
+            }
+            manualOffsetDailyRevenue = currentRawDaily;
+            localStorage.setItem("manualOffsetDailyRevenue", manualOffsetDailyRevenue);
+
+            let netDaily = 0;
+            document.getElementById('dailyRev').innerText = `₱${netDaily.toFixed(2)}`;
+            alert("Today's revenue has been successfully reset!");
+        } catch (e) {
+            console.error("Error resetting daily sales:", e);
+            alert("Failed to reset daily sales. Please try again.");
+        }
+    }
 
     // Function to calculate and update timeframe-based revenues safely
     async function calculateAndSaveRevenues(snapshot) {
